@@ -16,91 +16,120 @@ import javax.servlet.http.HttpServletResponse;
 import Models.KhoaHoc;
 import connection.JDBCConnection;
 
-@WebServlet({
-	"/khoa-hoc",
-	"/khoa-hoc/add",
-	"/khoa-hoc/update",
-	"/khoa-hoc/delete"
-	})
-public class KhoaHocServlet extends HttpServlet{
+@WebServlet({ "/khoa-hoc", "/khoa-hoc/add", "/khoa-hoc/edit", "/khoa-hoc/delete" })
+public class KhoaHocServlet extends HttpServlet {
 
 	@Override
 	protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-		
+
 		String path = req.getServletPath();
 		switch (path) {
 		case "/khoa-hoc": {
 			// goi ham getList
-			getList(req,resp);
+			getList(req, resp);
 			req.getRequestDispatcher("/khoaHoc/index.jsp").forward(req, resp);
 			break;
 		}
-		case "/khoa-hoc/add":{
+		case "/khoa-hoc/add": {
 			req.getRequestDispatcher("/khoaHoc/add.jsp").forward(req, resp);
 			break;
 		}
-		default:
-			throw new IllegalArgumentException("Unexpected value: " + path);
+		case "/khoa-hoc/edit": {
+
+			// lay tt dua vao id
+			int id = Integer.parseInt(req.getParameter("id"));
+			String query = "Select * from khoa_hoc where id = ?";
+			KhoaHoc khoaHoc = null;
+			try (Connection con = JDBCConnection.getConnection();
+					PreparedStatement statement = con.prepareStatement(query);) {
+				statement.setInt(1, id);
+				ResultSet rs = statement.executeQuery();
+				while (rs.next()) {
+					// tao ra KhoaHoc -> dua cho jsp
+					khoaHoc = new KhoaHoc(rs.getInt("id"), rs.getString("tenKH"), rs.getString("code"));
+				}
+
+			} catch (Exception e) {
+				// TODO: handle exception
+			}
+			req.setAttribute("khoaHoc", khoaHoc);
+			req.getRequestDispatcher("/khoaHoc/edit.jsp").forward(req, resp);
+			break;
 		}
-	}
-	
-	@Override
-	protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-		String path = req.getServletPath();
-		switch (path) {
-		case "/khoa-hoc/add":{
-			// can lay ra ten KH vaf code
-			String tenKH = req.getParameter("tenKH");
-			String code = req.getParameter("code");
-			
-			// query
-			String query = "Insert into khoa_hoc (tenKH, code) values (? ,?)";
-			try (
-					Connection con = JDBCConnection.getConnection();
-					PreparedStatement statement = con.prepareStatement(query);
-				) 
-			{
-				statement.setString(1, tenKH);
-				statement.setString(2, code);
+		case "/khoa-hoc/delete": {
+			int id = Integer.parseInt(req.getParameter("id"));
+
+			String query = " DELETE from khoa_hoc where id = ?";
+			try (Connection con = JDBCConnection.getConnection();
+					PreparedStatement statement = con.prepareStatement(query)) {
+				statement.setInt(1, id);
 				
-				// thuc thi insert
 				statement.executeUpdate();
-				
-				resp.sendRedirect(req.getContextPath() +"/khoa-hoc");
-				
+				resp.sendRedirect(req.getContextPath() + "/khoa-hoc");
+
 			} catch (Exception e) {
 				// TODO: handle exception
 				e.printStackTrace();
 			}
-			
 			break;
 		}
 		default:
 			throw new IllegalArgumentException("Unexpected value: " + path);
 		}
 	}
-	
-	
-	
-	
-	
-	
-	
+
+	@Override
+	protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+		String path = req.getServletPath();
+		switch (path) {
+		case "/khoa-hoc/add": {
+			// can lay ra ten KH vaf code
+			add(req, resp);
+			break;
+		}
+		case "/khoa-hoc/edit": {
+			String tenKH = req.getParameter("tenKH");
+			String code = req.getParameter("code");
+			int id = Integer.parseInt(req.getParameter("id"));
+			System.out.println(tenKH);
+			System.out.println(code);
+			System.out.println(id);
+			// query
+			String query = "Update khoa_hoc set tenKH = ? , code = ? where id = ?";
+			try (Connection con = JDBCConnection.getConnection();
+					PreparedStatement statement = con.prepareStatement(query);) {
+				statement.setString(1, tenKH);
+				statement.setString(2, code);
+				statement.setInt(3, id);
+				// thuc thi insert
+				statement.executeUpdate();
+				resp.sendRedirect(req.getContextPath() + "/khoa-hoc");
+
+			} catch (Exception e) {
+				// TODO: handle exception
+				e.printStackTrace();
+			}
+			break;
+		}
+		default:
+			throw new IllegalArgumentException("Unexpected value: " + path);
+		}
+	}
+
 //	GET LIST KHOAHOC
-	private void getList(HttpServletRequest req, HttpServletResponse resp) 
-			throws ServletException, IOException {
+	private void getList(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
 		List<KhoaHoc> khoaHocs = new ArrayList<KhoaHoc>();
 		String query = "SELECT * FROM khoa_hoc";
-		Connection con=null;
+		Connection con = null;
 		try {
-			 con = JDBCConnection.getConnection();
+			con = JDBCConnection.getConnection();
 			// chuaarn bi cua sql de guiw bd
 			PreparedStatement statement = con.prepareStatement(query);
 			// thuc thi cau sql va nhan ket qua tra ve trong ResultSet
-			// SELECT 
+			// SELECT
 			ResultSet rs = statement.executeQuery();
 			// rs con gia tri thi chay vong lap
-			while(rs.next()) {
+			while (rs.next()) {
 				System.out.println(rs.getString("tenKH"));
 				// trien luu ds vao khoahocs
 				KhoaHoc newKH = new KhoaHoc();
@@ -113,9 +142,32 @@ public class KhoaHocServlet extends HttpServlet{
 			statement.close();
 
 			con.close();
-		}catch(Exception e) {
+		} catch (Exception e) {
 			e.printStackTrace();
-		} 
+		}
 		req.setAttribute("khoaHocs", khoaHocs);
+	}
+
+//	INSERT
+	private void add(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+		String tenKH = req.getParameter("tenKH");
+		String code = req.getParameter("code");
+
+		// query
+		String query = "Insert into khoa_hoc (tenKH, code) values (? ,?)";
+		try (Connection con = JDBCConnection.getConnection();
+				PreparedStatement statement = con.prepareStatement(query);) {
+			statement.setString(1, tenKH);
+			statement.setString(2, code);
+
+			// thuc thi insert
+			statement.executeUpdate();
+
+			resp.sendRedirect(req.getContextPath() + "/khoa-hoc");
+
+		} catch (Exception e) {
+			// TODO: handle exception
+			e.printStackTrace();
+		}
 	}
 }

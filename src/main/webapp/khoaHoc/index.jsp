@@ -33,9 +33,13 @@
 							<td>${khoaHoc.tenKH}</td>
 							<td>${khoaHoc.code}</td>
 							<td>
-								<button class="btn btn-sm btn-warning">Sửa</button>
+								<a class="btn btn-sm btn-warning" 
+								href="${pageContext.request.contextPath}/khoa-hoc/edit?id=${khoaHoc.id}">Sửa</a>
 
-								<button class="btn btn-sm btn-danger">Xoá</button>
+								<a class="btn btn-sm btn-danger"
+								href="${pageContext.request.contextPath}/khoa-hoc/delete?id=${khoaHoc.id}"
+								onclick="return confirm('Ban co chac chan chua?')"
+								>Xoa</a>
 
 							</td>
 
