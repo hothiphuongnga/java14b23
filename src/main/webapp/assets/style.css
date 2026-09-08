@@ -1,0 +1,21 @@
+body {
+	background-color: #f5f6fa;
+}
+
+.sidebar {
+	min-height: calc(100vh - 56px);
+}
+
+.sidebar .nav-link {
+	color: #adb5bd;
+	padding: 12px 20px;
+}
+
+.sidebar .nav-link:hover {
+	background-color: #343a40;
+	color: white;
+}
+
+.content {
+	min-height: calc(100vh - 56px);
+}
